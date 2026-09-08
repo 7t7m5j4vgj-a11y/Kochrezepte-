@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🍽️ Zufalls-Kochgenerator</title>
+<style>
+:root{--bg:#f7f4ef;--card:#fff;--ink:#222;--muted:#6c675f;--accent:#d95f39;--accent2:#f2b84b;--line:#e8e1d7}
+*{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:linear-gradient(135deg,#fffaf4,#f3eee6);color:var(--ink)}
+.wrap{max-width:1050px;margin:auto;padding:28px 18px 60px}.hero{text-align:center;margin-bottom:24px}.hero h1{font-size:clamp(2rem,5vw,3.5rem);margin:.2em 0}.hero p{color:var(--muted)}
+.controls,.result{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:0 12px 35px #0000000d}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;align-items:end}
+label{font-weight:700;font-size:.9rem} select,button{width:100%;padding:12px 14px;border-radius:12px;border:1px solid #d9d0c4;background:#fff;font:inherit}
+button{cursor:pointer;font-weight:800}.primary{background:var(--accent);color:white;border-color:var(--accent)}
+.result{margin-top:20px}.menu{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px}
+.card{border:1px solid var(--line);border-radius:18px;padding:18px;background:#fffdf9;min-height:170px;display:flex;flex-direction:column}
+.badge{display:inline-block;font-size:.78rem;background:#f7e5dc;padding:5px 9px;border-radius:999px;margin-bottom:10px;width:max-content}
+.card h2{margin:.1em 0 .4em;font-size:1.35rem}.meta{color:var(--muted);font-size:.9rem;margin-bottom:auto}.card button{margin-top:15px}
+.sources{margin-top:18px;color:var(--muted);font-size:.9rem}.sources a{color:#9c4328}
+dialog{border:0;border-radius:22px;max-width:720px;width:calc(100% - 30px);padding:0;box-shadow:0 25px 80px #0008}dialog::backdrop{background:#0008}
+.modal{padding:24px}.close{float:right;width:auto;background:#eee;border:0}.recipe h2{margin-top:0}.recipe ul,.recipe ol{line-height:1.65}.note{background:#fff4e8;border-radius:12px;padding:12px;color:#694d3e}
+@media(max-width:800px){.menu{grid-template-columns:1fr}.controls{grid-template-columns:1fr 1fr}}@media(max-width:480px){.controls{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="hero">
+  <h1>🎲 Zufalls-Kochgenerator</h1>
+  <p>Hauptspeise + kleine Leckereien – inspiriert von Rezeptportalen und Community-Rezepten.</p>
+</header>
+
+<section class="controls">
+  <div><label for="style">Küche</label><select id="style"><option value="alle">🌍 Alles</option><option value="italienisch">🇮🇹 Italienisch</option><option value="asiatisch">🥢 Asiatisch</option><option value="deutsch">🇩🇪 Deutsch</option><option value="indisch">🇮🇳 Indisch</option><option value="mediterran">☀️ Mediterran</option></select></div>
+  <div><label for="diet">Ernährung</label><select id="diet"><option value="alle">Alles</option><option value="vegetarisch">Vegetarisch</option><option value="vegan">Vegan</option><option value="fleisch">Mit Fleisch/Fisch</option></select></div>
+  <div><label for="time">Max. Zeit</label><select id="time"><option value="999">Egal</option><option value="20">20 Min.</option><option value="30">30 Min.</option><option value="45">45 Min.</option><option value="60">60 Min.</option></select></div>
+  <div><label>&nbsp;</label><button class="primary" onclick="generate()">🎲 Neu würfeln</button></div>
+</section>
+
+<section class="result">
+  <div class="menu" id="menu"></div>
+  <div class="sources">Quellenpool: Chefkoch, Kitchen Stories und Community-Rezeptideen. Bei Social-Reels werden keine fremden Inhalte kopiert; der Generator verlinkt stattdessen zur Quelle bzw. zu passenden Suchseiten.</div>
+</section>
+</div>
+
+<dialog id="dlg"><div class="modal"><button class="close" onclick="dlg.close()">✕</button><div id="recipe" class="recipe"></div></div></dialog>
+
+<script>
+const dishes = [
+{name:"Cremige Champignon-Pasta",type:"haupt",style:"italienisch",diet:"vegetarisch",time:25,source:"Kitchen Stories",url:"https://www.kitchenstories.com/de/kategorien/community/hauptgerichte",ingredients:["300 g Pasta","250 g Champignons","1 Zwiebel","150 ml Sahne oder Kochcreme","50 g Parmesan","1 Knoblauchzehe","Salz, Pfeffer, Öl"],steps:["Pasta nach Packungsangabe kochen.","Pilze, Zwiebel und Knoblauch anbraten.","Sahne dazugeben und kurz einkochen lassen.","Pasta und Parmesan unterheben, abschmecken und servieren."]},
+{name:"Butter Chicken",type:"haupt",style:"indisch",diet:"fleisch",time:60,source:"Kitchen Stories Community",url:"https://www.kitchenstories.com/en/recipes/community",ingredients:["500 g Hähnchen","1 Zwiebel","400 g Tomaten","150 ml Sahne","Joghurt","Knoblauch","Garam Masala, Paprika, Salz"],steps:["Hähnchen würzen und anbraten.","Zwiebel und Knoblauch anschwitzen.","Tomaten und Gewürze zugeben und köcheln lassen.","Hähnchen und Sahne einrühren und bis zum Garen köcheln. Mit Reis servieren."]},
+{name:"Orientalisches Reis-Curry",type:"haupt",style:"mediterran",diet:"vegetarisch",time:45,source:"Kitchen Stories Community",url:"https://www.kitchenstories.com/de/kategorien/community/hauptgerichte",ingredients:["250 g Reis","1 Zucchini","1 Paprika","1 Dose Kichererbsen","1 Zwiebel","Currypulver","Kreuzkümmel","Öl"],steps:["Reis garen.","Gemüse würfeln und kräftig anbraten.","Kichererbsen und Gewürze dazugeben.","Mit etwas Wasser schmoren und mit Reis servieren."]},
+{name:"Gebratener Reis mit Gemüse",type:"haupt",style:"asiatisch",diet:"vegetarisch",time:25,source:"Kitchen Stories Community",url:"https://www.kitchenstories.com/de/kategorien/community/reisgerichte",ingredients:["250 g gekochter Reis","2 Eier","1 Karotte","1 Zucchini","2 Frühlingszwiebeln","Sojasauce","Sesamöl"],steps:["Gemüse klein schneiden und anbraten.","Reis dazugeben und kräftig braten.","Eier in einer freien Stelle der Pfanne stocken lassen und unterheben.","Mit Sojasauce und Sesamöl abschmecken."]},
+{name:"Rigatoni al forno",type:"haupt",style:"italienisch",diet:"fleisch",time:45,source:"Chefkoch Forum/Rezepte",url:"https://www.chefkoch.de/rs/s0/foren/Rezepte.html",ingredients:["400 g Rigatoni","300 g Hackfleisch","400 g passierte Tomaten","1 Zwiebel","100 ml Sahne","150 g Käse","Salz, Pfeffer, Oregano"],steps:["Nudeln vorkochen.","Hackfleisch und Zwiebel anbraten, Tomaten und Sahne einrühren.","Mit Gewürzen abschmecken und mit Nudeln mischen.","Mit Käse bestreuen und bei 200 °C überbacken."]},
+{name:"Hähnchenpfanne mit Gemüse",type:"haupt",style:"deutsch",diet:"fleisch",time:30,source:"Chefkoch",url:"https://www.chefkoch.de/rezepte/",ingredients:["400 g Hähnchenbrust","1 Paprika","1 Zucchini","1 Zwiebel","1 Knoblauchzehe","Paprika edelsüß","Salz, Pfeffer","Öl"],steps:["Hähnchen würfeln und scharf anbraten.","Gemüse dazugeben und 6–8 Minuten braten.","Knoblauch und Gewürze einrühren.","Mit einem Klecks Joghurt oder Reis servieren."]},
+{name:"Linsen-Bolognese",type:"haupt",style:"italienisch",diet:"vegan",time:35,source:"Kitchen Stories Community",url:"https://www.kitchenstories.com/de/stories/zeit-dein-lieblingsrezept-hochzuladen",ingredients:["200 g rote Linsen","400 g Tomaten","1 Karotte","1 Zwiebel","1 Stange Sellerie","300 g Pasta","Oregano"],steps:["Zwiebel, Karotte und Sellerie anbraten.","Linsen und Tomaten zugeben.","Mit Wasser auffüllen und ca. 20 Minuten köcheln.","Mit Pasta servieren."]},
+
+{name:"Knusprige Kichererbsen",type:"lecker",style:"orientalisch",diet:"vegan",time:15,source:"Kitchen Stories Community",url:"https://www.kitchenstories.com/de/kategorien/community/hauptgerichte",ingredients:["1 Dose Kichererbsen","1 EL Öl","Paprika","Kreuzkümmel","Salz"],steps:["Kichererbsen abtropfen und trocknen.","Mit Öl und Gewürzen mischen.","Bei 200 °C etwa 15 Minuten knusprig backen."]},
+{name:"Tomaten-Mozzarella-Spieße",type:"lecker",style:"mediterran",diet:"vegetarisch",time:10,source:"Chefkoch",url:"https://www.chefkoch.de/rezepte/",ingredients:["Kirschtomaten","Mini-Mozzarella","Basilikum","Olivenöl","Salz","Balsamico"],steps:["Tomaten, Mozzarella und Basilikum aufspießen.","Mit Öl, Salz und etwas Balsamico beträufeln."]},
+{name:"Guacamole mit knusprigen Tortillas",type:"lecker",style:"mexikanisch",diet:"vegan",time:15,source:"Community-Rezeptidee",url:"https://www.chefkoch.de/rezepte/",ingredients:["2 Avocados","1 Tomate","Limettensaft","Salz","Chili","Tortilla-Chips"],steps:["Avocado zerdrücken.","Tomate würfeln und unterheben.","Mit Limette, Salz und Chili abschmecken.","Mit Tortilla-Chips servieren."]},
+{name:"Schoko-Tassenkuchen",type:"lecker",style:"alle",diet:"vegetarisch",time:10,source:"Kitchen Stories Community",url:"https://www.kitchenstories.com/de/kategorien/community/einfache-rezepte",ingredients:["4 EL Mehl","2 EL Kakao","2 EL Zucker","3 EL Milch","2 EL Öl","1/2 TL Backpulver"],steps:["Alles in einer großen Tasse verrühren.","Etwa 60–90 Sekunden in der Mikrowelle garen.","Kurz abkühlen lassen."]},
+{name:"Bliss Balls",type:"lecker",style:"alle",diet:"vegan",time:10,source:"Kitchen Stories Community",url:"https://www.kitchenstories.com/de/kategorien/community/schnelle-gerichte",ingredients:["100 g Haferflocken","80 g Datteln","1 EL Kakao","1 EL Nussmus","1 Schuss Wasser"],steps:["Alles fein zerkleinern und verkneten.","Masse zu kleinen Kugeln rollen.","Kalt stellen und genießen."]},
+{name:"Erfrischendes Kaffee-Dessert im Glas",type:"lecker",style:"alle",diet:"vegetarisch",time:20,source:"Kitchen Stories Community",url:"https://www.kitchenstories.com/de/kategorien/community/einfache-rezepte",ingredients:["Espresso","Mascarpone oder Frischkäse","Joghurt","etwas Zucker","Kakao","Löffelbiskuits"],steps:["Mascarpone und Joghurt cremig rühren.","Löffelbiskuits mit Espresso tränken.","Abwechselnd schichten und mit Kakao bestäuben.","Kurz kalt stellen."]}
+];
+
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)]}
+function compatible(d){
+ const s=style.value, di=diet.value, t=+time.value;
+ if(s!=="alle" && d.style!==s && d.style!=="alle") return false;
+ if(di==="vegan" && d.diet!=="vegan") return false;
+ if(di==="vegetarisch" && !["vegan","vegetarisch"].includes(d.diet)) return false;
+ if(di==="fleisch" && !["fleisch"].includes(d.diet)) return false;
+ return d.time<=t;
+}
+function generate(){
+ let main=dishes.filter(d=>d.type==="haupt"&&compatible(d));
+ let treats=dishes.filter(d=>d.type==="lecker"&&compatible(d));
+ if(!main.length) main=dishes.filter(d=>d.type==="haupt");
+ if(!treats.length) treats=dishes.filter(d=>d.type==="lecker");
+ const chosen=[pick(main),pick(treats),pick(treats)];
+ if(chosen[1].name===chosen[2].name && treats.length>1) chosen[2]=pick(treats.filter(x=>x!==chosen[1]));
+ document.getElementById("menu").innerHTML=chosen.map((d,i)=>`
+ <article class="card"><span class="badge">${i===0?"🍽️ Hauptspeise":"✨ Kleine Leckerei"}</span>
+ <h2>${d.name}</h2><div class="meta">⏱️ ${d.time} Min. · ${d.diet} · ${d.source}</div>
+ <button onclick='showRecipe(${JSON.stringify(d).replace(/'/g,"&#39;")})'>📖 Rezept anzeigen</button></article>`).join("");
+}
+function showRecipe(d){
+ document.getElementById("recipe").innerHTML=`<h2>${d.name}</h2>
+ <p><b>⏱️ ${d.time} Minuten</b> · ${d.diet} · Quelle: <b>${d.source}</b></p>
+ <h3>Zutaten</h3><ul>${d.ingredients.map(x=>`<li>${x}</li>`).join("")}</ul>
+ <h3>Zubereitung</h3><ol>${d.steps.map(x=>`<li>${x}</li>`).join("")}</ol>
+ <div class="note">ℹ️ Dies ist eine eigene, kompakte Kochanleitung auf Basis der Rezeptidee. Für das vollständige Original bitte die Quelle öffnen.</div>
+ <p><a href="${d.url}" target="_blank" rel="noopener">🔗 Originalquelle / Rezeptportal öffnen</a></p>`;
+ dlg.showModal();
+}
+generate();
+</script>
+</body>
+</html>
